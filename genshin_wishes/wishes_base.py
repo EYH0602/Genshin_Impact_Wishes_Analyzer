@@ -3,6 +3,7 @@ import time
 import requests
 import pandas as pd
 from urllib import parse
+from data import DataBase
 
 ADDRESS = 'https://hk4e-api.mihoyo.com/event/gacha_info/api/getGachaLog'
 TIMESLEEP = 0.2
@@ -10,7 +11,7 @@ PAGE_SIZE = 6
 
 
 class WishesBase():
-    def __init__(self, url):
+    def __init__(self, url, use_csv=True, use_db=True):
         resolved = dict(
             parse.parse_qsl(parse.urlsplit(url.strip()).query)
         )
@@ -34,18 +35,29 @@ class WishesBase():
             'end_id': '0'
         }
 
+        self.use_csv = use_csv
+        self.use_db = use_db
+
         self.wishes = []
+        self.df = None
+
+        # file settings
         self.file_name = ''
         self.rst_file_name = ''
-        self.df = None
+
+        # database settings
+        self.table = ''
+        self.db = DataBase()
 
     def run(self):
         self.init_params()
         self.check_params()
         self.fetch_request()
         self.process_data()
-        self.to_local_file()
-        self.to_remote_storage()
+        if self.use_csv:
+            self.to_local_file()
+        if self.use_db:
+            self.to_remote_storage()
 
     def init_params(self):
         raise NotImplementedError
@@ -57,6 +69,8 @@ class WishesBase():
             raise ValueError("file name should be set.")
         if self.rst_file_name == '':
             raise ValueError('result file name should be set.')
+        if self.table == '':
+            raise ValueError('db table name should be set.')
 
     def fetch_request(self):
         while True:
@@ -89,7 +103,6 @@ class WishesBase():
         self.df = pd.DataFrame(
             data, columns=('item_type', 'name', 'rank_type', 'time')
         )
-        print(self.df.to_string())
 
     def to_local_file(self):
         """
@@ -101,7 +114,13 @@ class WishesBase():
         """
         write to local/remote db for record.
         """
-        raise NotImplementedError
+        self.db.append(self.table, source="df")(self.df)
+
+    def backup_local_record(self):
+        """
+        sync local csv to db
+        """
+        self.db.append(self.table, source="csv")(self.file_name)
 
     def analyze(self):
         self.init_params()
@@ -115,10 +134,10 @@ class WishesBase():
 
     def calculate(self):
         """
-        返回总抽卡数，5星总数与占比，4星总数与占比，3星总数与占比，
-        平均y抽出5星，平均y抽出4星，
-        已x抽未出5星，已x抽未出4星，
-        5星列表（抽卡数），4星列表（抽卡数），日期范围
+        返回总抽卡数, 5星总数与占比, 4星总数与占比, 3星总数与占比,
+        平均y抽出5星, 平均y抽出4星,
+        已x抽未出5星, 已x抽未出4星,
+        5星列表（抽卡数）, 4星列表（抽卡数）, 日期范围
         """
 
         fromdate = self.df.iat[0, 3].split()[0]
@@ -174,8 +193,8 @@ class WishesBase():
                 results[1], results[2], results[3]))
             fo.write('|{}%\t|{}%\t|{}%\t|\n\n'.format(
                 results[4], results[5], results[6]))
-            fo.write('平均{}抽出五星，平均{}抽出四星\n'.format(results[7], results[8]))
-            fo.write('已{}抽未出五星，已{}抽未出四星'.format(results[9], results[10]))
+            fo.write('平均{}抽出五星, 平均{}抽出四星\n'.format(results[7], results[8]))
+            fo.write('已{}抽未出五星, 已{}抽未出四星'.format(results[9], results[10]))
             if results[1] > 0:
                 fo.write('\n\n五星列表：\n')
                 for item in results[11]:
