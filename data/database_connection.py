@@ -52,3 +52,8 @@ class DataBase():
             append_from_dataframe(df)
 
         return append_from_dataframe if source == "df" else append_from_csv
+
+    def get_table(self, table: str):
+        df = pd.read_sql_table(table, self.engine)
+        df["time"] = df["time"].astype(str)
+        return df.drop(columns=["id"])
