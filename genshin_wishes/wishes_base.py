@@ -125,9 +125,9 @@ class WishesBase():
     def analyze(self):
         self.init_params()
         self.check_params()
-        # if dataframe does not exists, load from file
+        # if dataframe does not exists, read from db table
         if self.df is None:
-            self.df = pd.read_csv(self.file_name)
+            self.df = self.db.get_table(self.table)
 
         result = self.calculate()
         self.write_result_file(result)
