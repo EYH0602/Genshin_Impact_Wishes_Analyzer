@@ -14,12 +14,7 @@ Read wishes log from URL and save them to csv and mysql db (local or remote). An
 ### 需要安装的Python非标准库
 
 ```bash
-pip install openpyxl
-pip install pandas
-pip install requests
-pip install thrift2pyi
-pip install sqlalchemy
-pip install pymysql
+pip3 install -r requirements.txt
 ```
 
 ### How to Find the API call URL
@@ -37,12 +32,12 @@ Then disconnect your internet, refresh the page, then you should find the URL.
 python3 bootstrap.py all
 ```
 
-For more detail, see `.common/idl/const.thrift`.
+For more detail, see `./common/idl/const.thrift`.
 
 ### Python CLI
 
 ```python
-> from genshin_wishes import *
+> from genshin_wishes import CharacterWishes
 > job = CharacterWishes(url)
 > job.run()
 > job.analyze()
