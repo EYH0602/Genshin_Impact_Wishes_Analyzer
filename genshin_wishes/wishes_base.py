@@ -140,41 +140,33 @@ class WishesBase():
         5星列表（抽卡数）, 4星列表（抽卡数）, 日期范围
         """
 
-        fromdate = self.df.iat[0, 3].split()[0]
-        todate = self.df.iat[-1, 3].split()[0]
-        total = len(self.df)
-        five_count = 0
-        four_count = 0
-        three_count = 0
+        # query data
+        fromdate, todate = self.db.get_time_range(self.table)
+        total = self.db.get_total_count(self.table)
+        five_list = self.db.get_wishes(self.table, 5)  # [(id, name)]
+        four_list = self.db.get_wishes(self.table, 4)  # [(id, name)]
+
+        # calculation data
+        # NOTE: all count can be queried,
+        # such functions are provided in data/database_connection.py
+        five_count = len(five_list)
+        four_count = len(four_list)
+        three_count = total - five_count - four_count  # there are only three rank_types in the game
+        five_wait = total
+        four_wait = total
+
         five_percent = 0.0
         four_percent = 0.0
         three_percent = 0.0
-        five_wait = 0
-        four_wait = 0
-        five_list = []
-        four_list = []
         five_avg = 0.0
         four_avg = 0.0
 
-        for row in self.df.itertuples():
-            if row[3] == 3:
-                three_count += 1
-                four_wait += 1
-                five_wait += 1
-            elif row[3] == 4:
-                four_count += 1
-                four_list.append((row[2], four_wait + 1))
-                four_wait = 0
-                five_wait += 1
-            elif row[3] == 5:
-                five_count += 1
-                five_list.append((row[2], five_wait + 1))
-                five_wait = 0
-                four_wait += 1
         if five_count > 0:
+            five_wait -= five_list[-1][0]
             five_avg = round((total - five_wait) / five_count, 1)
         if four_count > 0:
             four_avg = round((total - four_wait) / four_count, 1)
+            four_wait -= four_list[-1][0]
         if total > 0:
             five_percent = round(100 * five_count / total, 2)
             four_percent = round(100 * four_count / total, 2)
@@ -185,7 +177,7 @@ class WishesBase():
 
     def write_result_file(self, results):
         with open(self.rst_file_name, 'w', encoding='UTF-8') as fo:
-            fo.write('原神祈愿历史记录分析 ({})'.format(self.rst_file_name))
+            fo.write('原神祈愿历史记录分析 ({}) '.format(self.rst_file_name))
             fo.write('{} ~ {}\n\n'.format(results[13], results[14]))
             fo.write('共{}抽\n'.format(results[0]))
             fo.write('|五星\t|四星\t|三星\t|\n')
@@ -198,8 +190,8 @@ class WishesBase():
             if results[1] > 0:
                 fo.write('\n\n五星列表：\n')
                 for item in results[11]:
-                    fo.write(item[0] + '({}) '.format(item[1]))
+                    fo.write('{} ({}), '.format(item[1], item[0]))
             if results[2] > 0:
                 fo.write('\n\n四星列表：\n')
                 for item in results[12]:
-                    fo.write(item[0] + '({}) '.format(item[1]))
+                    fo.write('{} ({}), '.format(item[1], item[0]))
