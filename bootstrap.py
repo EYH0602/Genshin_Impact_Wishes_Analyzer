@@ -43,6 +43,7 @@ if __name__ == '__main__':
         logging.info('Current tasks: {}'.format(tasks))
         for task in tasks:
             task.run()
+            task.analyze()
     except Exception as ex:
         logging.error(ex)
         exit(1)

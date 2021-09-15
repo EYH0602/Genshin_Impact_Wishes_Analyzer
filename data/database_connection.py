@@ -30,11 +30,20 @@ class DataBase():
     def __get_max_timestamp(self, table: str):
         session = self.Session()
         model = model_map[table]
-        lastest_time = session.query(model.time) \
+        latest_time = session.query(model.time) \
             .order_by(desc(model.id)) \
             .first()
         session.close()
-        return lastest_time if lastest_time is None else lastest_time[0]
+        return latest_time if latest_time is None else latest_time[0]
+
+    def __get_min_timestamp(self, table: str):
+        session = self.Session()
+        model = model_map[table]
+        first_time = session.query(model.time) \
+            .order_by(model.id) \
+            .first()
+        session.close()
+        return first_time if first_time is None else first_time[0]
 
     def append(self, table: str, source: str = "df"):
         if source not in ["df", "csv"]:
@@ -57,3 +66,46 @@ class DataBase():
         df = pd.read_sql_table(table, self.engine)
         df["time"] = df["time"].astype(str)
         return df.drop(columns=["id"])
+
+    def get_time_range(self, table: str):
+        return self.__get_min_timestamp(table), self.__get_max_timestamp(table)
+
+    def get_total_count(self, table: str) -> int:
+        session = self.Session()
+        model = model_map[table]
+        id_max = session.query(model.id) \
+            .order_by(desc(model.id)) \
+            .first()
+        session.close()
+        return id_max[0]
+
+    def get_wishes_count(self, table: str, rank_type: int) -> int:
+        session = self.Session()
+        model = model_map[table]
+        count = session.query(model.id) \
+            .filter(model.rank_type == rank_type) \
+            .count()
+        session.close()
+        return count[0]
+
+    def get_last_wish(self, table: str, rank_type: int):
+        session = self.Session()
+        model = model_map[table]
+        wish = session.query(model.id) \
+            .filter(model.rank_type == rank_type) \
+            .order_by(desc(model.id)) \
+            .first()
+        session.close()
+        return wish
+
+    def get_wishes(self, table: str, rank_type: int):
+        """
+        get a list of wishes from the given table
+        """
+        session = self.Session()
+        model = model_map[table]
+        wishes = session.query(model.id, model.name) \
+            .filter(model.rank_type == rank_type) \
+            .all()
+        session.close()
+        return wishes
