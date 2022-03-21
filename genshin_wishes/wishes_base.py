@@ -5,7 +5,7 @@ import pandas as pd
 from urllib import parse
 from data import DataBase
 
-ADDRESS = 'https://hk4e-api.mihoyo.com/event/gacha_info/api/getGachaLog'
+ADDRESS = 'https://hk4e-api-os.mihoyo.com/event/gacha_info/api/getGachaLog'
 TIMESLEEP = 0.2
 PAGE_SIZE = 6
 

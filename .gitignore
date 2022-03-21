@@ -4,7 +4,7 @@ __pycache__/
 *$py.class
 
 # config file
-url.txt
+url*.txt
 
 # result files
 *_analysis.txt
